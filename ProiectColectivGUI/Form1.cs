@@ -318,7 +318,7 @@ namespace ProiectColectivGUI
             string textFromTheFile = System.IO.File.ReadAllText(fileToRead);
 
             //stringul format din cuvantul pe care trebuie sa il cautam si expresia regulata
-            string cuvantDeCautatPlusRegex = cuvantDeCautat + @"\s:\s[0-9]{2}\W([0-9]+)@";
+            string cuvantDeCautatPlusRegex = cuvantDeCautat + @"\s:\s[0-9]+\W([0-9]+)@";
 
             var match = Regex.Match(textFromTheFile, cuvantDeCautatPlusRegex);
 
@@ -608,6 +608,32 @@ namespace ProiectColectivGUI
                     Console.WriteLine("elem de cautat----------------------------------> NOT FOUND");
                 }
 
+                Match matchElemDeCautatAnd = Regex.Match(toSearch, "AND\\s*\"([a-zA-z0-9]+)\"\\s*");
+                if (matchElemDeCautatAnd.Success)
+                {
+                    elementDeCautat = matchElemDeCautatAnd.Groups[1].Value;
+                    Console.WriteLine("elem de cautat---------------->" + elementDeCautat);
+                    while (matchElemDeCautatAnd.Success)
+                    {
+                        vectorElementDeCautat[nrElementDeCautat++] = matchElemDeCautatAnd.Groups[1].Value;
+                        matchElemDeCautatAnd = matchElemDeCautatAnd.NextMatch();
+                    }
+
+                }
+
+                Match matchElemDeCautatOr = Regex.Match(toSearch, "OR\\s*\"([a-zA-z0-9]+)\"\\s*");
+                if (matchElemDeCautatOr.Success)
+                {
+                    elementDeCautat = matchElemDeCautatOr.Groups[1].Value;
+                    Console.WriteLine("elem de cautat---------------->" + elementDeCautat);
+                    while (matchElemDeCautatOr.Success)
+                    {
+                        vectorElementDeCautat[nrElementDeCautat++] = matchElemDeCautatOr.Groups[1].Value;
+                        matchElemDeCautatOr = matchElemDeCautatOr.NextMatch();
+                    }
+
+                }
+
 
 
 
@@ -685,10 +711,134 @@ namespace ProiectColectivGUI
                 }
                 Console.WriteLine("nrOrs------------------------->" + nrOrs);
 
+                int ElseIfCondition = 0;
+                Match okElseIf = Regex.Match(toSearch, "ELSE:\\s*IF");
+                if (okElseIf.Success)
+                {
+                    ElseIfCondition = 1;
+                }
+                Console.WriteLine("ELSEIFCONDITION------------------------->" + ElseIfCondition);
+
 
                 Console.WriteLine("file path ------------->" + filePath);
 
+                void orCondition()
+                {
+                    int k = 0;
+                    StreamWriter streamWriter = new StreamWriter(outputPath + "\\output1.c", false, Encoding.ASCII);
 
+                    functieReadHoza = Cautare(RteVdaFile, vectorElementDeCautat[0]);
+                    tipVarDarian = regexFunctieDBC(DBCFile, vectorElementDeCautat[0]);
+                    tipVar2Darian = regexFunctieDBC(DBCFile, vectorElementDeCautat[0]);
+
+                    int i = 0;
+                    streamWriter.Write(
+                    functionType + " " + functionName + "(" + functionType + ")" + "\r\n" +
+                    "{" + "\r\n" +
+                    tipVarDarian + " " + variable + ";" + "\r\n"
+                    );
+
+                    for (i = 0; i < vectorElementDeCautat.Length; i++)
+                    {
+                        if (vectorElementDeCautat[i] != null)
+                        {
+                            streamWriter.Write(
+                                    tipVar2Darian + " " + vectorElementDeCautat[i] + ";" + "\r\n" +
+                                    functieReadHoza + "(&" + vectorElementDeCautat[i] + ");" + "\r\n"
+                                );
+                        }
+                    }
+
+                    i = 0;
+                    streamWriter.Write(
+                    "if(" + vectorElementDeCautat[i] + " == " + vectorValori[k++] + ")" 
+                    );
+
+                    for (i = 1; i < vectorElementDeCautat.Length; i++)
+                    {
+                        if (vectorElementDeCautat[i] != null)
+                        {
+                            streamWriter.Write(
+                                " || (" + vectorElementDeCautat[i] + " == " + vectorValori[k++] + ")" + "\r\n"
+                                );
+                        }
+                    }
+
+                    streamWriter.Write(
+                   
+                                "{" + "\r\n" +
+                                "\t" + variable + " = " + vectorValori[k++] + ";" + "\r\n" +
+                                "}" + "\r\n" +
+                                "else" + "\r\n" +
+                                "{" + "\r\n" +
+                                "\t" + variable + " = " + vectorValori[k++] + ";" + "\r\n" +
+                                "}" + "\r\n" +
+                                "}" + "\r\n" + "\r\n");
+
+                    streamWriter.Close();
+                    MessageBox.Show("FileOutput a fost generat !!!");
+                    this.Close();
+                }
+
+
+                void andCondition()
+                {
+                    int k = 0;
+                    StreamWriter streamWriter = new StreamWriter(outputPath + "\\output1.c", false, Encoding.ASCII);
+
+                    functieReadHoza = Cautare(RteVdaFile, vectorElementDeCautat[0]);
+                    tipVarDarian = regexFunctieDBC(DBCFile, vectorElementDeCautat[0]);
+                    tipVar2Darian = regexFunctieDBC(DBCFile, vectorElementDeCautat[0]);
+
+                    int i = 0;
+                    streamWriter.Write(
+                    functionType + " " + functionName + "(" + functionType + ")" + "\r\n" +
+                    "{" + "\r\n" +
+                    tipVarDarian + " " + variable + ";" + "\r\n"
+                    );
+
+                    for (i = 0; i < vectorElementDeCautat.Length; i++)
+                    {
+                        if (vectorElementDeCautat[i] != null)
+                        {
+                            functieReadHoza = Cautare(RteVdaFile, vectorElementDeCautat[i]);
+                            streamWriter.Write(
+                                    tipVar2Darian + " " + vectorElementDeCautat[i] + ";" + "\r\n" +
+                                    functieReadHoza + "(&" + vectorElementDeCautat[i] + ");" + "\r\n"
+                                );
+                        }
+                    }
+
+                    i = 0;
+                    streamWriter.Write(
+                    "if(" + vectorElementDeCautat[i] + " == " + vectorValori[k++] + ")" 
+                    );
+
+                    for (i=1; i< vectorElementDeCautat.Length; i++)
+                    {
+                        if (vectorElementDeCautat[i] != null)
+                        {
+                            streamWriter.Write(
+                                " && (" + vectorElementDeCautat[i] + " == " + vectorValori[k++] + ")" + "\r\n"
+                                );
+                        }
+                    }
+
+                    streamWriter.Write(
+
+                                "{" + "\r\n" +
+                                "\t" + variable + " = " + vectorValori[k++] + ";" + "\r\n" +
+                                "}" + "\r\n" +
+                                "else" + "\r\n" +
+                                "{" + "\r\n" +
+                                "\t" + variable + " = " + vectorValori[k++] + ";" + "\r\n" +
+                                "}" + "\r\n" +
+                                "}" + "\r\n" + "\r\n");
+
+                    streamWriter.Close();
+                    MessageBox.Show("FileOutput a fost generat !!!");
+                    this.Close();
+                }
 
                 void singleCondition()
                 {
@@ -696,33 +846,79 @@ namespace ProiectColectivGUI
 
                     StreamWriter streamWriter = new StreamWriter(outputPath + "\\output1.c", false, Encoding.ASCII);
 
-                    for (int i = 0; i <= vectorElementDeCautat.Length - 1; i++)
+                    if(ElseIfCondition == 0)
                     {
-                        if (vectorElementDeCautat[i] != null)
+                        for (int i = 0; i <= vectorElementDeCautat.Length - 1; i++)
                         {
-                            functieReadHoza = Cautare(RteVdaFile, vectorElementDeCautat[i]);
-                            tipVarDarian = regexFunctieDBC(DBCFile, vectorElementDeCautat[i]);
-                            tipVar2Darian = regexFunctieDBC(DBCFile, vectorElementDeCautat[i]);
+                            if (vectorElementDeCautat[i] != null)
+                            {
+                                functieReadHoza = Cautare(RteVdaFile, vectorElementDeCautat[i]);
+                                tipVarDarian = regexFunctieDBC(DBCFile, vectorElementDeCautat[i]);
+                                tipVar2Darian = regexFunctieDBC(DBCFile, vectorElementDeCautat[i]);
 
 
-                            streamWriter.Write(
-                            functionType + " " + functionName + "(" + functionType + ")" + "\r\n" +
-                            "{" + "\r\n" +
-                            tipVarDarian + " " + variable + ";" + "\r\n" +
-                            tipVar2Darian + " " + vectorElementDeCautat[i] + ";" + "\r\n" +
-                            functieReadHoza + "(&" + vectorElementDeCautat[i] + ");" + "\r\n" +
-                            "if(" + vectorElementDeCautat[i] + " == " + vectorValori[k++] + ")" + "\r\n" +
-                            "{" + "\r\n" +
-                            "\t" + variable + " = " + vectorValori[k++] + ";" + "\r\n" +
-                            "}" + "\r\n" +
-                            "else" + "\r\n" +
-                            "{" + "\r\n" +
-                            "\t" + variable + " = " + vectorValori[k++] + ";" + "\r\n" +
-                            "}" + "\r\n" +
-                            "}" + "\r\n" + "\r\n"
-                            );
+                                streamWriter.Write(
+                                functionType + " " + functionName + "(" + functionType + ")" + "\r\n" +
+                                "{" + "\r\n" +
+                                tipVarDarian + " " + variable + ";" + "\r\n" +
+                                tipVar2Darian + " " + vectorElementDeCautat[i] + ";" + "\r\n" +
+                                functieReadHoza + "(&" + vectorElementDeCautat[i] + ");" + "\r\n" +
+                                "if(" + vectorElementDeCautat[i] + " == " + vectorValori[k++] + ")" + "\r\n" +
+                                "{" + "\r\n" +
+                                "\t" + variable + " = " + vectorValori[k++] + ";" + "\r\n" +
+                                "}" + "\r\n" +
+                                "else" + "\r\n" +
+                                "{" + "\r\n" +
+                                "\t" + variable + " = " + vectorValori[k++] + ";" + "\r\n" +
+                                "}" + "\r\n" +
+                                "}" + "\r\n" + "\r\n"
+                                );
+                            }
                         }
                     }
+                    else
+                    {
+                        functieReadHoza = Cautare(RteVdaFile, vectorElementDeCautat[0]);
+                        tipVarDarian = regexFunctieDBC(DBCFile, vectorElementDeCautat[0]);
+                        tipVar2Darian = regexFunctieDBC(DBCFile, vectorElementDeCautat[0]);
+
+                        int i = 0;
+                        streamWriter.Write(
+                        functionType + " " + functionName + "(" + functionType + ")" + "\r\n" +
+                        "{" + "\r\n" +
+                        tipVarDarian + " " + variable + ";" + "\r\n"
+                        );
+
+                        for(i=0; i<vectorElementDeCautat.Length; i++)
+                        {
+                            if (vectorElementDeCautat[i] != null)
+                            {
+                                streamWriter.Write(
+                                        tipVar2Darian + " " + vectorElementDeCautat[i] + ";" + "\r\n" +
+                                        functieReadHoza + "(&" + vectorElementDeCautat[i] + ");" + "\r\n"
+                                    );
+                            }
+                        }
+
+                        i = 0;
+                        streamWriter.Write(
+                        "if(" + vectorElementDeCautat[i] + " == " + vectorValori[k++] + ")" + "\r\n" +
+                        "{" + "\r\n" +
+                        "\t" + variable + " = " + vectorValori[k++] + ";" + "\r\n" +
+                        "}" + "\r\n" +
+                        "else" + "\r\n" +
+                        "if" + "(" + vectorElementDeCautat[++i] + "==" + vectorValori[k++] + ")" + "\r\n" +
+                        "{" + "\r\n" +
+                        "\t" + variable + " = " + vectorValori[k++] + ";" + "\r\n" +
+                        "}" + "\r\n" +
+                        "else" +  "\r\n" +
+                        "{" + "\r\n" +
+                        variable + " = " + vectorValori[k++] + ";" + "\r\n" + 
+                        "}" + "\r\n" +
+                        "}" + "\r\n" + "\r\n"
+                        );
+                    }
+                    
                     MessageBox.Show("FileOutput a fost generat !!!");
                     streamWriter.Close();
                     this.Close();
@@ -735,6 +931,7 @@ namespace ProiectColectivGUI
 
                     tipVarDarian = valoriParametriiFaraValori[0];
                     tipVar2Darian = valoriParametriiFaraValori[0];
+                    functieReadHoza = Cautare(RteVdaFile, vectorElementDeCautat[0]);
 
 
                     StreamWriter streamWriter = new StreamWriter(outputPath + "\\output1.c", false, Encoding.ASCII);
@@ -758,11 +955,39 @@ namespace ProiectColectivGUI
                     streamWriter.Write(vectorTipuriParametrii[i] + " " + vectorParametriiFaraValori[i] + ")" + "\r\n");
 
                     streamWriter.Write(
+                        
                         "{" + "\r\n" +
                         tipVarDarian + " " + variable + ";" + "\r\n" +
+                        "if(" + vectorElementDeCautat[i] + " == " + vectorValori[k++] + ")"
+                        );
 
+                    if(nrAnds > 0)
+                    {
+                       for (int j = 1; j < vectorElementDeCautat.Length; j++)
+                       {
+                           if (vectorElementDeCautat[j] != null)
+                           {
+                               streamWriter.Write(
+                                   " && (" + vectorElementDeCautat[j] + " == " + vectorValori[k++] + ")" + "\r\n"
+                                   );
+                           }
+                       }
+                    }
 
-                        "if(" + elementDeCautat + " == " + vectorValori[k++] + ")" + "\r\n" +
+                    if (nrOrs > 0)
+                    {
+                        for (int j = 1; j < vectorElementDeCautat.Length; j++)
+                        {
+                            if (vectorElementDeCautat[j] != null)
+                            {
+                                streamWriter.Write(
+                                    " || (" + vectorElementDeCautat[j] + " == " + vectorValori[k++] + ")" + "\r\n"
+                                    );
+                            }
+                        }
+                    }
+
+                    streamWriter.Write(
                         "{" + "\r\n" +
                         "\t" + variable + " = " + vectorValori[k++] + ";" + "\r\n" +
                         "}" + "\r\n" +
@@ -777,12 +1002,11 @@ namespace ProiectColectivGUI
                 }
 
 
-                //bool tempOk = false;
+              
                 if (DBCOpen == true && RteOpen == true && inputOpen == true)
                 {
                     outputPath = filePath.Substring(0, filePath.Length - ((fileName.Length) + 1));
-                    if (nrAnds == 0 && nrOrs == 0)
-                    {
+                    
                         try
                         {
                             Console.WriteLine("output path --------->" + outputPath);
@@ -817,7 +1041,7 @@ namespace ProiectColectivGUI
                                         Console.WriteLine("Exception" + exc.Message);
                                     }
 
-                                    //tempOk = true;
+                                   
 
 
                                 }
@@ -825,14 +1049,41 @@ namespace ProiectColectivGUI
                                 {
                                     //daca parametrii sunt gasiti in dbc sau rte_vda (folosind functiile de la Hoza si Darian)
 
+                                    if(nrAnds > 0)
+                                    {
+                                        try
+                                        {
+                                            andCondition();
+                                        }
+                                        catch (Exception exc)
+                                        {
+                                            Console.WriteLine("Exception" + exc.Message);
+                                        }
+                                        
+                                    }
+                                    else if (nrOrs > 0)
+                                {
                                     try
                                     {
-                                        singleCondition();
+                                        orCondition();
                                     }
-                                    catch (Exception exc)
+                                    catch(Exception exc)
                                     {
                                         Console.WriteLine("Exception" + exc.Message);
                                     }
+                                }
+                                    else
+                                    {
+                                        try
+                                        {
+                                            singleCondition();
+                                        }
+                                        catch (Exception exc)
+                                        {
+                                            Console.WriteLine("Exception" + exc.Message);
+                                        }
+                                    }
+                                    
                                 }
                             }
                             catch (FileNotFoundException fnfe)
@@ -863,7 +1114,7 @@ namespace ProiectColectivGUI
                                 MessageBoxIcon.Warning);
                             Console.WriteLine(nre.ToString());
                         }
-                    }
+                    
                 }
                 else
                 {
